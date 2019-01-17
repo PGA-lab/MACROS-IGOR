@@ -1,6 +1,8 @@
 ## MACROS-IGOR
 
-Descargar GIT desde https://git-scm.com/
+Descargar GIT desde https://git-scm.com/. Opciones a Seleccionar como en IMAGEN: 
+
+![IMAGEN](https://github.com/mjmoglie/MACROS-IGOR/blob/master/IMAGENES/3f03e277-1d72-407b-869a-0c7f22fcfb85.jpg)
 
 Ejecutar .cmd
 
