@@ -7,7 +7,7 @@ MACROS-IGOR
 
 Seleccionar como en __IMAGEN__ (ELEGIR WINDOWS DEFAULT CONSOLE WINDOW): 
 
-<img src=https://github.com/mjmoglie/MACROS-IGOR/blob/master/IMAGENES/3f03e277-1d72-407b-869a-0c7f22fcfb85.jpg width="600">
+<img src=https://github.com/PGA-lab/MACROS-IGOR/blob/master/IMAGENES/3f03e277-1d72-407b-869a-0c7f22fcfb85.jpg width="600">
 
 ***
 
@@ -21,16 +21,16 @@ Seleccionar como en __IMAGEN__ (ELEGIR WINDOWS DEFAULT CONSOLE WINDOW):
 
 ### - SI NO SE TIENE UNA CARPETA DE MACROS PREVIA:
 
-`git remote add origin https://github.com/mjmoglie/MACROS-IGOR`
+`git remote add origin https://github.com/PGA-lab/MACROS-IGOR`
 
-`git pull https://github.com/mjmoglie/MACROS-IGOR`
+`git pull https://github.com/PGA-lab/MACROS-IGOR`
 
 ### + SI SE TIENE UNA CARPETA DE MACROS PREVIA:
 
 **ir a ACTUALIZAR FILES (SUBIDA) y realizar todos los pasos excepto** `git push`
 (esto hace que cuando se bajen los macros que están en el repositorio remoto *github* estos se mergeen con los locales)
 
-`git remote add origin https://github.com/mjmoglie/MACROS-IGOR`
+`git remote add origin https://github.com/PGA-lab/MACROS-IGOR`
 
 `git fetch origin master`
 
@@ -52,9 +52,9 @@ Seleccionar como en __IMAGEN__ (ELEGIR WINDOWS DEFAULT CONSOLE WINDOW):
  tiene que figurar:
 > 
 ```
-origin  https://github.com/mjmoglie/MACROS-IGOR (fetch)
+origin  https://github.com/PGA-lab/MACROS-IGOR (fetch)
 
-origin  https://github.com/mjmoglie/MACROS-IGOR (push)
+origin  https://github.com/PGA-lab/MACROS-IGOR (push)
 ```
 
 `git fetch origin master`
