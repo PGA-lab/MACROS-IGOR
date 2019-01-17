@@ -1,4 +1,4 @@
-## MACROS-IGOR
+# MACROS-IGOR
 
 Descargar GIT desde https://git-scm.com/. 
 Instalar con las opciones default hasta que aparezca la IMAGEN
@@ -14,15 +14,18 @@ Cambiar a directorio donde se almacenan los macros
 
 --git init
 
-# SI NO SE TIENE UNA CARPETA DE MACROS PREVIA:
+### SI NO SE TIENE UNA CARPETA DE MACROS PREVIA:
 
 --git remote add origin https://github.com/mjmoglie/MACROS-IGOR
+
 --git pull https://github.com/mjmoglie/MACROS-IGOR
 
-# SI SE TIENE UNA CARPETA DE MACROS PREVIA:
+### SI SE TIENE UNA CARPETA DE MACROS PREVIA:
 
 --git remote add origin https://github.com/mjmoglie/MACROS-IGOR
+
 --git fetch origin master
+
 --git merge origin/master
 
 ## ACTUALIZAR FILES (DESCARGA)
