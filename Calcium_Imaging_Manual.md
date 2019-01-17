@@ -7,7 +7,7 @@ Procedimiento:
 2.	Abrir la imagen y mantenerla en primer plano.
 3.	Ejecutar AutoROIImgProcV2(). Esto desplegará el Menu donde deben cargarse todos los parámetros y seleccionar las opciones de procesamiento:
 
-![IMAGEN1](https://github.com/mjmoglie/MACROS-IGOR/blob/master/IMAGENES/MENU.png)
+<img src=https://github.com/mjmoglie/MACROS-IGOR/blob/master/IMAGENES/MENU.png width="700">
  
 •	Photobleaching Correction: Al seleccionarlo se realizará una corrección del photobleaching sobre los trazos de fluorescencia. La misma se basa en el ajuste de una función lineal al trazo de la señal de fluorescencia promedio entre los ROIs comprendidos en el intervalo Photobleaching PRE- Photobleaching POST. Si ambos presentan el mismo valor se tomarán en cuenta todos los ROIs. Tener en cuenta que el número coincida con el ángulo asignado (#ROIs=360/Angle).
 •	Analysis Output: seleccionar si el resultado final será expresada en DeltaF/F0 o Delta F.
@@ -24,14 +24,14 @@ i.	X-Center & Y-Center: Posicion del centro de la circunferencia de analisis en 
 ii.	External Radius: límite radial en pixeles de la circunferencia a partir de la cual se generarán los ROIs. Más allá de este radio, nada será analizado.
 iii.	Angle: dimensión angular de  cada uno de los ROIs que se generará (#ROIs = 360/Angle)
 
-![IMAGEN2](https://github.com/mjmoglie/MACROS-IGOR/blob/master/IMAGENES/Dise%C3%B1o%20ROI.png)
+<img src=https://github.com/mjmoglie/MACROS-IGOR/blob/master/IMAGENES/Dise%C3%B1o%20ROI.png width="350">
 
 •	Analysis parameters: 
 i.	Peak Criteria: Indica cuantas veces mayor a la desviacion estándar del baseline debe ser el pico de la señal para ser considerado positivo (2-3).
 ii.	Integral Criteria: Indica valor umbral de la integral de la señal de fluorescencia en unidades arbitrarias para considerar el evento como positivo.
 iii.	Threshold Min & Threshold Max: Se define el umbral de la señal de fluorescencia. A partir de la detección del borde celular con un algoritmo iterativo, se genera un histograma de la señal de fluorescencia celular, normalizado a la fluorescencia máxima. Luego, se obtiene una máscara comprendida entre las regiones con los umbrales máximos y mínimos indicados.  
  
- ![IMAGEN3](https://github.com/mjmoglie/MACROS-IGOR/blob/master/IMAGENES/Dise%C3%B1o%20ROI%20y%20MASCARA.png)
+ <img src=https://github.com/mjmoglie/MACROS-IGOR/blob/master/IMAGENES/Dise%C3%B1o%20ROI%20y%20MASCARA.png width="350">
 
 4.	Una vez cargados los parámetros, apretar sobre el botón “Start Background-ROI Draw” y dibujar una región de interés sobre el Background que será utilizada para corregir la señal de fluorescencia. La región dibujada puede eliminarse con el botón “Erase ROI” y se puede volver a dibujar. 
 5.	Presionar el botón “Finish Background-ROI” para dar comienzo al macro de análisis automático.
@@ -50,6 +50,7 @@ iii.	Threshold Min & Threshold Max: Se define el umbral de la señal de fluoresc
 •	TauImaging: Wave de 2 dimensiones (# ROI vs. # sweeps).  Ajste exponencial a la fase de decaimiento de la señal de fluorescencia en caso de haber detectado un evento positivo basándose en los criterios de amplitud e integral.
 
 •	ConcatenatedSweeps: Este wave de dos dimensiones contiene la señal de fluorescencia de cada ROI a lo largo de todo el experimento. La señal de Fluorescencia se encuentra normalizada a la señal inicial de cada sweep. Presionando Ctrl+3 mientras se encuentra abierto este Wave se activa la función “Image Line Profile” que permite explorar la imagen a partir de la generación de trazos correspondientes a la señal de fluorescencia de cada ROI.
-![IMAGEN4](https://github.com/mjmoglie/MACROS-IGOR/blob/master/IMAGENES/CONCATENADO%20DE%20ROIS.png)
+
+<img src=https://github.com/mjmoglie/MACROS-IGOR/blob/master/IMAGENES/CONCATENADO%20DE%20ROIS.png width="450">
  
 
