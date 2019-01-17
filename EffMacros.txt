@@ -1,0 +1,315 @@
+Function EffAnalysisTrain()
+	//Indicar ventana de tiempo para buscar pico del IPSC (entre Win1 y Win2, en ms)
+	//Indicar NoiseFactor: define umbral como X veces el RMS
+	//
+	//5.6.13 JG: Cambie i) umbral de deteccion de artefacto de estimulacion, ii) el valor atribuido a 'period'
+	//cuando hay un estimulo unico
+	//28.6.13 JG: Agregue analisis de eventos eferentes 'positivos' es decir evocados con Vh > Erev K+
+	//Como por ej a -40mV. Para esto, adapte analisis, de manera que ahora los eventos son positivos siempre
+	//(incluso cuando Vh = -90mV) y la rutina busca maximos, NO minimos.
+	//Ademas, hay un subrutina para calcular parametros cineticos, fundamentalmente, para eventos positivos.
+	//Calcula, halfwidth, y ajusta la integral de un evento a una exponencial y da el tau. Ademas, se informa 
+	//la carga generada por un evento.
+	//26feb2015 jg: cambie el Eff_HWandTauCalc para que calcule el decay de la corriente sinaptica y tambien de la integral
+	//7dic2018_juan
+	//SampleInterval sale del DimDelta de SmoothSweep
+	//12dic2018: Eliminamos win2 que no tiene sentido.
+	
+	variable j=0, FlagNewAnal=0, NTimeScale
+	Wave ParamWave// 1111111
+	Variable file = ParamWave[0], Win1 = ParamWave[5], NoiseFactor = ParamWave[4], LatencyAnal = ParamWave[13]
+	Variable NStimuli = ParamWave[2], NSweeps = ParamWave[1], QeffF = ParamWave[7], KineticAnalFlag = ParamWave[11], ArtifTime = ParamWave[12]
+	Variable Period = 1/ParamWave[3]
+		//Adjusting for complete name of 'file number', with 4 digits
+	String FileComp = num2str(file)
+	Do
+		FileComp = "0"+FileComp
+	While(strlen(FileComp)<4)
+//	String sSweepParams = "SweepParams_"+FileComp; Wave/T wSweepParams = $sSweepParams
+//	Variable SampleInterval = str2num(wSweepParams[29][1])
+	Variable BaselineT1 = 0.01, BaselineT2 = 0.015, Latency
+	
+	if(BaselineT2 >= ARtifTime)
+		print "El tiempo para calcular baseline tiene que ser anterior al artefacto"
+		abort
+	endif
+	String sNFailures = "NFailures_"+num2str(file)
+	Make/o/n=(NStimuli) $sNFailures
+	Wave wNFailures = $sNFailures
+	wNfailures = 0
+	String sSweepName
+	SVAR CurrentFileName
+	Variable  SweepEnd, i, PrevPerforThreshP1, PrevPerforThreshP2, threshold2, LocalPeak, ArtifDetP = 2e6, flag
+//	Variable flag, flag1
+	String sAmplitudeWave, sCumAmpWave
+	for(j=0;j<NStimuli;j+=1)
+		sAmplitudeWave = "AmplitudeWave_"+num2str(file)+"_"+num2str(j+1)
+		Make/o/n=(NSweeps) $sAmplitudeWave
+		Wave wAmplitudeWave = $sAmplitudeWave
+		wAmplitudeWave = 0
+		if(LatencyAnal == 1)
+			String sLatencyWave = "LatencyWave_"+num2str(file)+"_"+num2str(j+1)
+			Make/o/n=(NSweeps) $sLatencyWave
+			Wave wLatencyWave = $sLatencyWave
+			wLatencyWave = nan
+		endif
+	endfor
+//	Make/o/n=(Nsweeps) RMS = 0//, QWave = 0, HWWave = 0, TauQWave = 0
+	Variable baseline, threshold, sweepnumber = 0
+	//FlagWave will have 1 or 0 in each row indicating if a given stimulus produced a success or failure, respectively
+	Make/O/N=(NStimuli) FlagWave
+	//Period is 1/freq in template, but should be corrected in case freq = 0
+	if((period == inf) || (NStimuli == 1))		//5.6.13 agregue la posibilidad de NStimuli ==1
+		if(QeffF < 0)
+			Period = 3*.026					//5.6.13 Cambie de Period = 0 a Period = 3*0.026
+		elseif(QeffF > 0)
+			Period = 3* .06
+		endif
+//	elseif(Win2 > Period)//		error message
+//		printf "Win2 debe ser menor que el periodo del tren\r"
+//		abort
+	endif
+	//
+	//The following is to trigger (or not) the Time Scale Function that will construct the ensemble time scale
+//	Variable NewAnal = 1
+//	if(WaveExists(TimeScale) == 1)
+//		Wave TimeScale
+//		NTimeScale = DimSize(TimeScale,0)
+//		For(j=0;j<NTimeScale;j+=1)
+//			if(TimeScale[j][0] == file)
+//				Newanal = 0
+//			endif
+//		endfor
+//	endif
+	//
+	sSweepName = CurrentFileName[0,7]+"_"+Filecomp + "_1_1"
+	Wave SweepName = $sSweepName
+	Variable SampleInterval = DimDelta($sSweepName,0)
+	Variable AcqRate = (1/SampleInterval)
+	Wavestats/q SweepName
+	Variable Npnts = V_npnts
+	Make/o/n=(Npnts) SmoothSweep, DiffSweep////////////???????????????
+	If(KineticAnalFlag == 1)
+		String sTauDecay = "TauDecay_"+num2str(file)
+		String sHWWave = "HWWave_"+num2str(file)
+		String sQWave = "QWave_"+num2str(file)
+		String sTauQWave = "TauQWave_"+num2str(file)
+		Make/O/n=(NSweeps) $sTauDecay, $sTauQWave, $sHWWave, $sQWave
+		Wave TauDecay =  $sTauDecay
+		Wave HWWave = $sHWWave
+		Wave QWave = $sQWave
+		wave TauQWave =$sTauQWave
+		TauDecay = nan
+		TauQWave = nan
+		HWWave = nan
+		QWave = nan
+	endif
+	Do																	///// Cycle on sweepnumber
+		SweepEnd = 0
+		i=ArtifTime * AcqRate
+		sSweepName = CurrentFileName[0,7] + "_" +FileComp+"_"+ num2str(SweepNumber+1) + "_1"
+		Wave SweepName = $sSweepName
+		Duplicate/o $sSweepName, SmoothSweep
+//		Smooth 3, SmoothSweep							//12.11.12 Anulamos filtrado 
+		Differentiate $sSweepName/D= DiffSweep
+		
+		Variable BaselFinder = 0 
+		Do
+			Wavestats/q/r=[((BaselineT1+BaselFinder/10)*AcqRate),((BaselineT2+BaselFinder/10)*AcqRate)] SmoothSweep
+			if((V_sdev > 10) && (BaselFinder == 10))
+				print "Chequear donde calcular baseline"
+				abort
+			else
+				Baseline = V_avg
+				SmoothSweep -= baseline
+				threshold = NoiseFactor*V_sdev					//25.6.13 cambio
+				break
+			endif
+			BaselFinder +=1
+		While((BaselFinder/10)<1)
+		
+//		RMS[sweepnumber] = threshold//V_rms//J + baseline
+		variable flagcorr, criteria = 0, localint, qcarry, q
+		Variable IntThresh, IntThresh2 = QeffF
+		if(QeffF < 0)										//25.6.13 cambio
+			IntThresh = abs(QeffF * (1 - (exp(-Period/0.026))))	//Si el QeffF es < 0, es decir el Vh = -90
+			SmoothSweep *= (-1)							//los eventos son mas rapidos.
+														//ADEMAS!! hace que el eventos se POSITIVO
+		elseif(QeffF > 0)
+			IntThresh = QeffF * (1-(exp(-Period/0.060)))		//Si es >0, es decir el Vh = -40, la fase positivoa
+		endif											//de cada evento es mas lenta
+		Integrate SmoothSweep/D=SmoothSweep_int		
+		//Now, look for event in the smooth trace corresponding  to sweep #"SweepNumber"
+		Do															//// Cycles over point number in recording 'i'.
+			
+			//flagcorr = 0
+			flag = DiffSweep[i]										//i cuenta puntos en el trazo y busca artefacto!
+//			Wavestats/q/r=((i-win1*.5*AcqRate),(i+win1*.5*AcqRate)) DiffSweep
+//			flag1 = V_min
+			if(ArtifTime > 0)
+				ArtifDetP = 1
+			endif
+			FlagWave = 0
+			if((flag > ArtifDetP))// && (flag1 < (-1*ArtifDetP)))					//Detects artifact. 5.6.13, cambio de 2e5 a 2e6
+				for(j=0;j<NStimuli;j+=1)								//cicla sobre numero de estimulos del tren
+					QCarry = 0
+					sLatencyWave = "LatencyWave_"+num2str(file)+"_"+num2str(j+1)
+					Wave wLatencyWave = $sLatencyWave
+					sAmplitudeWave = "AmplitudeWave_"+num2str(file)+"_"+num2str(j+1)
+					Wave wAmplitudeWave = $sAmplitudeWave
+					Wavestats/q/r=[(i+AcqRate*(j*Period+Win1)), (i+AcqRate*(j+1)*Period)] SmoothSweep
+					//12.11.12 Cambiamos manera de calcular Localpeak, agregandole promedio de los 2 puntos vecinos
+					//25.6.13 Ahora busca maximo, porque SmoothSweep tiene los eventos positivos ahora
+					LocalPeak = (mean(SmoothSweep, (V_maxLoc - 2/AcqRate), (V_maxLoc + 2/AcqRate)))
+					LocalInt = (SmoothSweep_int[i + AcqRate*(j+1)*Period-5] - SmoothSweep_int[i + AcqRate*(j*period+win1)])
+					Latency = V_maxLoc - (i/AcqRate+(j*Period))
+					//El proximo if - else largoooo, para determinar si LocalPeak, es decir, la amplitud del evento
+					//Y tambien LocalInt, la Q del eventos, son mayores que un dado umbral.
+					if(LocalPeak > threshold)		//si LocalPeak, es decir la amplitud del evento, es mayor al umbral en primera instancia. 
+						for(q=0;q<j;q+=1)			//Calcula Qcarry que determina cuanta Q del evento anterior influye en la determinacion
+							if(QeffF < 0)
+								QCarry += FlagWave[q] * QeffF  * exp(((j-q) * (-period))/.026)
+							elseif(QeffF > 0)
+								QCarry += FlagWave[q] * QeffF  * exp(((j-q) * (-period))/.060)
+							endif
+						endfor
+																			
+						if(j == 0)												//En caso de 1 estim o el primero de un tren
+							if((LocalPeak > threshold) && (LocalInt > IntThresh))	//Determinacion ahora por criterio de integral
+								wAmplitudeWave[sweepnumber] = LocalPeak
+								FlagWave[j] = 1
+								//
+								if(LatencyAnal ==1)
+									wLatencyWave[sweepnumber] = Latency
+								endif
+								//
+								if(KineticAnalFlag == 1)						//Opcion para analisis cinetico de eventos
+									QWave[sweepnumber] = LocalInt			//esto es nuevo, 25.6.13
+									Eff_HWandTauCalc(SmoothSweep, SmoothSweep_int, SweepNumber, i, V_maxLoc, LocalPeak, file, QeffF)
+								endif
+							else												//Si cumple TAMBIEN con criterio de la Q del evento
+								wAmplitudeWave[sweepnumber] = 0			//=>> FALLA!
+								wNFailures[j] += 1
+								if(LatencyAnal ==1)
+									wLatencyWave[sweepnumber] = nan
+								endif
+							endif
+						else										//En caso de que NO sea evento unico o el primero de tren
+																//calcula primero threshold2 que es baseline antes del j-esimo estimulo
+							PrevPerforThreshP1 = i + (AcqRate * Period * (j)) - AcqRate*.0003
+							PrevPerforThreshP2 = i + (AcqRate * Period * (j)) - AcqRate*.0001
+							Wavestats/Q/R=[PrevPerforThreshP1, PrevPerforThreshP2] SmoothSweep
+							threshold2 = abs(V_avg)
+							if((LocalPeak > (threshold + threshold2)) && (LocalInt > (IntThresh + QCarry)))	//25.6.13 cambio
+												//si Local Peak es mayor a la suma de los dos umbrales (threshold2 + threshold)
+												//y la integral es mayor al umbral + el 'carry-over' de los eventos anteriores
+								wAmplitudeWave[sweepnumber] = LocalPeak - threshold2			//(threshold es = RMS * FactorUmbral)
+								FlagWave[j] = 1
+								if(LatencyAnal ==1)
+									wLatencyWave[sweepnumber] = Latency
+								endif
+							else																//falla
+								wAmplitudeWave[sweepnumber] = 0
+								wNFailures[j] += 1
+								FlagWave[j] = 0
+								if(LatencyAnal ==1)
+									wLatencyWave[sweepnumber] = nan
+								endif
+							endif
+						endif
+					else
+						wAmplitudeWave[sweepnumber] = 0
+						wNFailures[j] +=1
+						FlagWave[j] = 0
+					endif
+				endfor
+				SweepEnd = 1										//Flag to stop cycle that looks for artifact
+//				flagcorr = 0
+			endif
+			i+=1
+		While((i<NPnts) && (SweepEnd == 0))							//ciclo de busqueda del artefacto
+		sweepnumber +=1
+		if(i == NPnts)									//agregado 3.7.13
+			printf "Llega al final del sweep y no encuentra artefacto\r"
+		endif
+		//
+	While(sweepnumber < NSweeps)									//ciclo sobre sweeps
+	
+//	If(newanal == 1)
+//		EffAnalTimeScale()
+//	endif
+	sAmplitudeWave = "AmplitudeWave_"+num2str(file)+"_1"
+	wavestats/q $sAmplitudeWave
+	variable reporteamp = V_avg
+	printf "File: %g, Amp Prom: %g\r", file, reporteamp
+	printf "# Sweeps: %g, # Stimuli: %g, Period: %gThreshold Factor: %g, Win1: %g, Q event factor: %g\r", Nsweeps, NStimuli, Period, NoiseFactor, Win1, QeffF
+end
+
+Function Eff_HWandTauCalc(SmoothSweep, SmoothSweep_Int, SweepNumber, i, ImaxLoc, Imax, file, QeffF)
+//26feb2015_Juan
+//en algun momento cambie el macro de modo que ajustaba el decay de la corriente sinaptica. Y no la integral
+//recupere hoy el ajuste de la integral tambien. De modo que hace dos ajustes ahora.
+//7dic2018_juan
+//SampleInterval sale del DimDelta de SmoothSweep
+	Wave SmoothSweep, SmoothSweep_Int
+	Variable SweepNumber, i, ImaxLoc, Imax, file, QeffF
+	Variable SampleInterval = DimDelta(SmoothSweep, 0)
+	Variable AcqRate = (1/SampleInterval)
+	Wave ParamWave, TauQWave, HWWave
+	String sTauWave = "TauDecay_" +num2str(file)
+	String sHWWave = "HWWave_" + num2str(file)
+	String sTauQWave = "TauQWave_" +num2str(file)
+	Wave HWWave = $sHWWave
+	Wave TauWave = $sTauWave
+	Wave TauQWave = $sTauQWave
+	Variable win1 = ParamWave[5], T1, T2, ok = 1
+	Duplicate/O smoothSweep, SmoothSweep2
+//	Duplicate/O smoothSweep_int, SmoothSweep2_int
+	Smooth 100, SmoothSweep2
+//	if(ParamWave[7] < 0)
+//		SmoothSweep2 *= (-1)
+//		SmoothSweep2_int *= (-1)
+//	endif
+	DoWindow/F Graph2
+	FindLevel/Q/EDGE=1/R=(((i/AcqRate)+win1), ImaxLoc) SmoothSweep2, (Imax/2)
+	if(V_flag == 0)
+		T1 = V_LevelX
+	elseif(V_flag == 1)
+		T1 = win1 + i/AcqRate
+	endif
+	FindLevel/Q/EDGE=2/R=(ImaxLoc, .35) SmoothSweep2, (Imax/2)
+	if(V_flag == 0)
+		T2 = V_LevelX
+	endif	
+	//fiteo de la integral primero
+	curvefit/q exp_xoffset SmoothSweep_int [AcqRate*(t1),AcqRate*(T2*2)] /D
+	TauQWave[sweepnumber] = K2
+	// fiteo de la caida del evento
+	WaveStats/Q/R=(T1, 3*T2) SmoothSweep/////////////////.   ,<<<<===chequear!!!
+	CurveFit/Q exp_Xoffset SmoothSweep2 [((V_maxLoc+.001)*AcqRate), (AcqRate*3*T2)] /D
+	
+	Cursor/P/W=graph2 A ,SmoothSweep, ((V_maxLoc+.001)*AcqRate)
+	Cursor/P/W=graph2 B ,SmoothSweep, T2*3*AcqRate
+	Cursor/P/W=graph2 C ,SmoothSweep_Int,  T1*AcqRate
+	Cursor/P/W=graph2 D ,SmoothSweep_Int,  AcqRate*(T2*2)
+	SetAxis int -.2, (.2+SmoothSweep_int[AcqRate*(T2*2)])
+	if(Imax > 0)
+		SetAxis left -10, (Imax+20)
+	else
+		SetAxis left Imax, 10
+	endif
+	SetAxis bottom .0, .25
+	textbox/k/n=text0
+	TextBox/n=text0 "Sweep #: "+num2str(sweepnumber+1)
+	doupdate
+	Prompt ok, "OK (0: NO; 1: OK)"
+	DoPrompt "Kinetic analysis on events", OK	
+	if(ok ==1)
+		HWWave[SweepNumber] = T2 - T1
+		TauWave[SweepNumber] = K2
+	elseif( ok == 99)
+		abort
+	else
+		TauQWave[sweepnumber] = nan
+	endif
+End
