@@ -10,7 +10,7 @@ Cambiar a directorio donde se almacenan los macros
 
 --git pull https://github.com/mjmoglie/MACROS-IGOR
 
-ACTUALIZAR FILES (DESCARGA)
+##ACTUALIZAR FILES (DESCARGA)
 
 Ejecutar .cmd
 
@@ -18,7 +18,7 @@ Cambiar a directorio donde se almacenan los macros
 
 --git pull https://github.com/mjmoglie/MACROS-IGOR
 
-ACTUALIZAR FILES (SUBIDA)
+##ACTUALIZAR FILES (SUBIDA)
 
 Ejecutar .cmd
 
