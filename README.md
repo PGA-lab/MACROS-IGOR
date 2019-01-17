@@ -50,7 +50,9 @@ Seleccionar como en __IMAGEN__ (ELEGIR WINDOWS DEFAULT CONSOLE WINDOW):
  `git remote -v`
  
  tiene que figurar:
-```origin  https://github.com/mjmoglie/MACROS-IGOR (fetch)
+> 
+```
+origin  https://github.com/mjmoglie/MACROS-IGOR (fetch)
 
 origin  https://github.com/mjmoglie/MACROS-IGOR (push)
 ```
