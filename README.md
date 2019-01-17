@@ -1,4 +1,4 @@
-### MACROS-IGOR
+## MACROS-IGOR
 
 Descargar GIT desde https://git-scm.com/
 
@@ -26,7 +26,7 @@ Cambiar a directorio donde se almacenan los macros
 
 --git status
 
--git add -u ./
+--git add -u ./
 
 --git commit -a -m "MENSAJE A GUSTO" 
 
