@@ -1,10 +1,5 @@
 #pragma rtGlobals=3		// Use modern global access method and strict wave access.
-#include <FilterDialog> menus=0
-#include <All IP Procedures>
-#include <Image Saver>
-#include <Ternary Diagram>
-#include <Pole and Zero Filter Design> menus=0
-#include <Scatter Plot Matrix 2>
+
 
 
 //  simpleICA(inX,reqComponents,w_init)

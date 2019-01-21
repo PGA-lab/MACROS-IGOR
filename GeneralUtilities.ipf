@@ -9,6 +9,13 @@
 "WM3DImageSliderProc1()"
 "OCS()"
 
+#include <FilterDialog> menus=0
+#include <All IP Procedures>
+#include <Image Saver>
+#include <Ternary Diagram>
+#include <Pole and Zero Filter Design> menus=0
+#include <Scatter Plot Matrix 2>
+
 
 
 Function ImagenRespuestaWideField()
