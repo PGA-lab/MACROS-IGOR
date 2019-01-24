@@ -39,11 +39,19 @@ Strconstant ABF_UNIT_STRINGS="pA;nA;µA;mA;pV;nV;µV;mV"
 Strconstant ABF_BASEUNIT_STRINGS="A;A;A;A;V;V;V;V"
 Strconstant ABF_UNIT_SCALINGS="1e-12;1e-9;1e-6;1e-3;1e-12;1e-9;1e-6;1e-3"
 
-Function HT_ImportAbfFile2()
-	String filePathName,basename
+Function HT_ImportAbfFile2([filePathName])
+	String filePathName
+	string basename
 	Variable channel,channelNumberFlag,channelNumberTypeFlag,nameCleanupFlag,channelIDInNameFlag,gapFreeFlag
-	filePathName = ""; basename="";channelNumberFlag=(-2); channelNumberTypeFlag=2;nameCleanupFlag=1;channelIDInNameFlag=2;gapFreeFlag=1
+	
+	if (strlen(filePathName)==0)
+		filePathName=""
+	endif
+	
+	basename="";channelNumberFlag=(-2); channelNumberTypeFlag=2;nameCleanupFlag=1;channelIDInNameFlag=2;gapFreeFlag=1
 	fHT_ImportAbfFile(filePathName,basename,channelNumberFlag,channelNumberTypeFlag,nameCleanupFlag,channelIDInNameFlag,gapFreeFlag)
+	
+	
 end
 // channel: logical channel to read, -1 for all acquired channels
 Function fHT_ImportAbfFile(filePathName,basename,channel,channelNumberTypeFlag,nameCleanupFlag,channelIDInNameFlag,gapFreeFlag)

@@ -12,7 +12,85 @@ Menu "jProtocols"
 	"Renombrar Heka file", RenameHekaDialog()
 end
 
+
+Function GenerateMyanalisis()
+
+string ascii
+
+variable refnum
+string/g CurrentPath
+
+open/d/r/mult=1/t="????" refnum as ""
+string outputPaths = S_fileName
+
+
+	if (strlen(outputPaths) == 0)
+		Print "Cancelled"
+	endif
+	
+		Variable numFilesSelected = ItemsInList(outputPaths, "\r")
+		Variable K
+		
+		make/o/t/n=(numFilesSelected*5) MyanalysisCM
+		make/o/t/n=(numFilesSelected*5) MyanalysisRM
+		make/o/t/n=(numFilesSelected*5) MyanalysisRS
+
+
+		for(K=0; K<numFilesSelected; K+=1)
+			String path = StringFromList(K, outputPaths, "\r")
+			string parse=ParseFilePath(5,path,"*",0,0)
+			Currentpath="filename="+parse
+				
+			MyanalysisCM[0+5*k]= CurrentPath
+			MyanalysisCM[01+5*k]="select_cm=true"
+			MyanalysisCM[02+5*k]="select_time_x=true"
+			MyanalysisCM[03+5*k]="part=0"
+			MyanalysisCM[04+5*k]="export=asc"
+
+			MyanalysisrM[0+5*k]= CurrentPath
+			MyanalysisrM[01+5*k]="select_rm=true"
+			MyanalysisrM[02+5*k]="select_time_x=true"
+			MyanalysisrM[03+5*k]="part=0"
+			MyanalysisrM[04+5*k]="export=asc"
+			
+			Myanalysisrs[0+5*k]= CurrentPath
+			Myanalysisrs[01+5*k]="select_rs=true"
+			Myanalysisrs[02+5*k]="select_time_x=true"
+			Myanalysisrs[03+5*k]="part=0"
+			Myanalysisrs[04+5*k]="export=asc"
+
+
+		endfor
+		
+		NewPath/o Path1, "C:Program Files (x86):jclamp32:param"
+		Save/e=0/o/p=path1/J/M="\r\n"/DSYM=""/f MyanalysisCM as "Myanalysis.ana"
+		Save/e=0/o/p=path1/J/M="\r\n"/DSYM=""/f MyanalysisrM as "Myanalysis1.ana"
+		Save/e=0/o/p=path1/J/M="\r\n"/DSYM=""/f Myanalysisrs as "Myanalysis2.ana"
+end 
+
+
+///////////////////////////////////////////////////////////////////////////////////////////
+
 Function jClampLoader()
+	
+	string/g CurrentPath
+
+	open/d/r/mult=1/t="????" refnum as ""
+	string outputPaths = S_fileName
+	
+	if (strlen(outputPaths) == 0)
+		Print "Cancelled"
+	else
+	
+	Variable numFilesSelected = ItemsInList(outputPaths, "\r")
+	Variable K
+	
+	for(K=0; K<numFilesSelected; K+=1)                                            // Este loop cicla en funcion de la cantidad de files 
+			String path = StringFromList(K, outputPaths, "\r")
+			Printf "%d: %s\r", K, path	
+			CurrentPath= ParseFilePath(5,path,"\\", 0, 0)
+	
+
 	variable i
 	SVAR CellN
 	String cellNAux
@@ -23,8 +101,12 @@ Function jClampLoader()
 	
 		CellN = CellNAux
 	endif
-	String HT_Import = "HT_ImportAbfFile2()"
-	Execute HT_Import
+	
+	HT_ImportAbfFile2(filepathname=currentpath)
+	
+	//String HT_Import = "HT_ImportAbfFile2(filepathname=""+currentpath+"")"
+	//Execute HT_Import
+	
 	SVAR jFilename
 	SVAR jFilePath
 	
@@ -33,7 +115,10 @@ Function jClampLoader()
 		String TestMultipleEpisodes = jFileName+"_"+num2str(i+1)+"_1"
 		if(WaveExists($TestMultipleEpisodes) == 1)		
 			Variable Pos1= strsearch(jFilePath, ".", Inf, 1)	//16.5.18 Simple cambio. Ahora busca de atras para adelante
-			String FilePath = jFilePath[0,(Pos1 -1)] + "_2.asc"
+			
+			String FilePath = ParseFilePath(1, jFilePath,"\\", 1, 0)+"export2\\"+jFilename+".asc"
+			//String FilePath = jFilePath[0,(Pos1 -1)] + "_2.asc"
+			
 //	open/r refnum as Filename
 //	variable ver
 //	string verstr
@@ -49,10 +134,11 @@ Function jClampLoader()
 //	Deletepoints 0,3, jTemp1
 			Setscale/p x,0, SampleIntCm, jTemp1
 			SVAR CurrentFileName 
-			CurrentFileName = "LB1" + jFileName[1,4]+ cellN+"_0" + jFileName[5,7]
+			CurrentFileName = "MM1" + jFileName[1,4]+ cellN+"_0" + jFileName[5,7]
 			Rename jTemp1, $(CurrentFileName+"_"+num2str(i+1)+"_2")
 	
-			 FilePath = jFilePath[0,(Pos1 -1)] + "_3.asc"
+			FilePath=ParseFilePath(1, jFilePath,"\\", 1, 0)+"export3\\"+jFilename+".asc"
+			// FilePath = jFilePath[0,(Pos1 -1)] + "_3.asc"
 			LoadWave/Q/N=jTempRm/J/k=1/L={0,3,0,2*i,2} FilePath
 			if(V_flag == 0)
 				abort
@@ -61,7 +147,8 @@ Function jClampLoader()
 			Rename jTempRm1, $(CurrentFileName+"_"+num2str(i+1)+"_3")
 			Setscale/p x,0, SampleIntCm, $(CurrentFileName+"_"+num2str(i+1)+"_3")
 	
-			 FilePath = jFilePath[0,(Pos1 -1)] + "_4.asc"
+			FilePath=ParseFilePath(1, jFilePath,"\\", 1, 0)+"export4\\"+jFilename+".asc"
+			//FilePath = jFilePath[0,(Pos1 -1)] + "_4.asc"
 			LoadWave/Q/N=jTempRs/J/k=1/L={0,3,0,2*i,2} FilePath
 			if(V_flag == 0)
 				abort
@@ -76,6 +163,10 @@ Function jClampLoader()
 		endif
 		i+=1
 	While(1)
+	
+	
+	endfor
+	endif
 end
 
 
